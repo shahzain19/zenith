@@ -101,17 +101,18 @@ export default function RoomPage() {
                 durationMinutes: duration,
                 messagesCount: messages.length,
                 filesCount: files.length,
-                aiSummary,
+                aiSummary: aiSummary || undefined,
             });
 
             console.log("Recap saved perfectly. ID:", id);
 
             // 3. Absolute Redirection
-            const targetUrl = `/recap/${id}`;
-            console.log("Redirecting to:", targetUrl);
+            const targetUrl = `${window.location.origin}/recap/${id}`;
+            console.log("Redirecting to absolute URL:", targetUrl);
             window.location.href = targetUrl;
-        } catch (err) {
+        } catch (err: any) {
             console.error("Critical error during meeting end:", err);
+            alert(`Zenith Error: ${err.message || 'Unknown error'}`);
             window.location.href = "/";
         }
     };

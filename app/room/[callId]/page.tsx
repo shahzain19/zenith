@@ -10,7 +10,7 @@ import { VideoPlayer } from "@/components/VideoPlayer";
 import { ChatPanel } from "@/components/ChatPanel";
 import { FilePanel } from "@/components/FilePanel";
 import { Controls } from "@/components/Controls";
-import { useAuth, UserButton } from "@clerk/nextjs";
+import { useAuth, UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import {
     LuVideo,
@@ -29,6 +29,7 @@ export default function RoomPage() {
     const callId = params.callId as Id<"calls">;
     const router = useRouter();
     const { userId: clerkUserId, isLoaded } = useAuth();
+    const { user } = useUser();
     const [userName, setUserName] = useState<string>("");
     const [userId] = useState(() => Math.random().toString(36).substring(7));
     const [joined, setJoined] = useState(false);
@@ -48,6 +49,25 @@ export default function RoomPage() {
     const participants = useQuery(api.calls.getParticipants, { callId }) || [];
 
     const { localStream, screenStream, setScreenStream, remoteStreams, replaceTrack } = useWebRTC(callId, userId, userName);
+
+    // Auto-join for authenticated users
+    useEffect(() => {
+        if (isLoaded && isAuthenticated && user && !joined && !isEnding) {
+            console.log("Auto-joining authenticated user:", user.fullName);
+            const name = user.fullName || user.username || "Zenith Participant";
+            setUserName(name);
+            joinCall({
+                callId,
+                name,
+                userId
+            }).then(() => {
+                setJoined(true);
+            }).catch(err => {
+                console.error("Auto-join failed:", err);
+                setError("Auto-join failed. Please try manually.");
+            });
+        }
+    }, [isLoaded, isAuthenticated, user, joined, isEnding, callId, userId, joinCall]);
 
     const handleJoin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -78,7 +98,7 @@ export default function RoomPage() {
                 console.log("Generating AI summary with Gemini...");
                 try {
                     // 10 second timeout for AI
-                    const summaryPromise = generateSummary({ callId });
+                    const summaryPromise = (generateSummary as any)({ callId });
                     const timeoutPromise = new Promise((_, reject) =>
                         setTimeout(() => reject(new Error("AI Timeout")), 10000)
                     );
@@ -127,14 +147,19 @@ export default function RoomPage() {
     };
 
     if (!isLoaded || !call || isEnding) return (
-        <div className="flex min-h-screen items-center justify-center bg-white">
-            <div className="flex flex-col items-center gap-4">
-                <div className="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-violet-200 animate-pulse-subtle">
-                    <LuVideo size={20} />
+        <div className="flex min-h-screen items-center justify-center mesh-gradient text-white">
+            <div className="flex flex-col items-center gap-6 animate-calm-in">
+                <div className="w-16 h-16 bg-white/10 backdrop-blur-3xl rounded-[2rem] flex items-center justify-center text-white shadow-2xl border border-white/20 animate-pulse-subtle">
+                    <LuVideo size={32} />
                 </div>
-                <p className="text-zinc-500 font-bold tracking-tight text-sm">
-                    {isEnding ? "Zenith AI is summarizing your meeting..." : "Zenith is warming up..."}
-                </p>
+                <div className="space-y-2 text-center">
+                    <p className="text-xl font-black tracking-tight">
+                        {isEnding ? "Zenith AI is working..." : "Preparing your Workspace..."}
+                    </p>
+                    <p className="text-white/50 text-sm font-medium">
+                        {isEnding ? "Summarizing highlights and key decisions" : "Synchronizing secure streams"}
+                    </p>
+                </div>
             </div>
         </div>
     );
@@ -248,34 +273,50 @@ export default function RoomPage() {
                     </div>
                 </header>
 
-                {/* Video Grid */}
-                <main className="flex-1 p-6 overflow-y-auto bg-zinc-50/20 flex flex-col items-center scrollbar-hide">
-                    <div className="flex flex-wrap gap-6 justify-center items-center w-full max-w-7xl mx-auto min-h-full py-12">
-                        {screenStream ? (
-                            <VideoPlayer stream={screenStream} muted isLocal label={`${userName}'s Screen`} />
-                        ) : (
-                            <VideoPlayer stream={localStream} muted isLocal label={userName} />
+                {/* Dynamic Fluid Video Grid */}
+                <main className="flex-1 p-4 sm:p-6 overflow-y-auto bg-zinc-50/20 flex flex-col items-center scrollbar-hide">
+                    <div className="w-full max-w-[1400px] mx-auto min-h-full py-8 sm:py-12 flex flex-col justify-center">
+
+                        {/* Active Grid */}
+                        {(screenStream || localStream || remoteStreams.size > 0) && (
+                            <div className="video-grid animate-calm-in">
+                                {screenStream ? (
+                                    <VideoPlayer stream={screenStream} muted isLocal label={`${userName}'s Screen`} />
+                                ) : (
+                                    <VideoPlayer stream={localStream} muted isLocal label={userName} />
+                                )}
+
+                                {Array.from(remoteStreams.entries()).map(([remoteId, stream]) => (
+                                    <VideoPlayer key={remoteId} stream={stream} label={`Participant ${remoteId.substring(0, 4)}`} />
+                                ))}
+                            </div>
                         )}
 
-                        {Array.from(remoteStreams.entries()).map(([remoteId, stream]) => (
-                            <VideoPlayer key={remoteId} stream={stream} label={`Participant ${remoteId.substring(0, 4)}`} />
-                        ))}
-
+                        {/* Premium Waiting State */}
                         {remoteStreams.size === 0 && !screenStream && (
-                            <div className="w-full flex-1 flex flex-col items-center justify-center py-20 text-zinc-400 gap-8 animate-calm-in">
-                                <div className="p-10 bg-white text-zinc-300 rounded-[2.5rem] border border-zinc-100 shadow-sm animate-float-calm">
-                                    <LuUserPlus size={40} />
+                            <div className="w-full flex-1 flex flex-col items-center justify-center min-h-[400px] animate-calm-in delay-200">
+                                <div className="relative group cursor-default">
+                                    <div className="absolute inset-0 bg-violet-500/20 blur-[60px] rounded-full animate-pulse-subtle" />
+                                    <div className="relative p-12 bg-white/80 backdrop-blur-xl rounded-[3rem] border border-white/60 shadow-2xl shadow-violet-100 flex flex-col items-center gap-6 transition-transform hover:scale-105 duration-500">
+                                        <div className="p-4 bg-violet-50 text-violet-600 rounded-2xl">
+                                            <LuUserPlus size={32} />
+                                        </div>
+                                        <div className="text-center space-y-2 max-w-xs">
+                                            <h3 className="text-xl font-bold text-zinc-900 tracking-tight">You're the first one here</h3>
+                                            <p className="text-zinc-500 font-medium">The room is ready in high-definition. Invite others to start the magic.</p>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(window.location.href);
+                                                alert("Link copied to clipboard!");
+                                            }}
+                                            className="px-6 py-3 bg-zinc-900 text-white font-bold rounded-xl hover:bg-zinc-800 transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-zinc-200/50"
+                                        >
+                                            <LuCopy size={16} />
+                                            <span>Copy Invite Link</span>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="text-center space-y-2">
-                                    <p className="font-bold text-zinc-900 tracking-tight">Isolated Room</p>
-                                    <p className="text-zinc-400 font-medium text-sm">Quietly awaiting other participants...</p>
-                                </div>
-                                <button
-                                    onClick={() => navigator.clipboard.writeText(window.location.href)}
-                                    className="h-12 px-8 bg-zinc-50 text-zinc-600 font-bold text-sm rounded-2xl border border-zinc-100 hover:bg-white hover:text-zinc-900 hover:shadow-sm transition-all active:scale-95"
-                                >
-                                    Copy Meeting URL
-                                </button>
                             </div>
                         )}
                     </div>

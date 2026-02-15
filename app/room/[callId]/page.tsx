@@ -20,7 +20,6 @@ import {
     LuSparkles,
     LuX,
     LuUserPlus,
-    LuLayoutGrid,
     LuTriangleAlert,
     LuCopy
 } from "react-icons/lu";
@@ -102,9 +101,7 @@ export default function RoomPage() {
     if (!joined) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-white relative overflow-hidden p-6 selection:bg-violet-100 selection:text-violet-900">
-                {/* Minimal Background Decoration */}
                 <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-zinc-50/50 rounded-full blur-[120px] -z-10" />
-
                 <div className="w-full max-w-md p-10 sm:p-14 bg-white rounded-[2.5rem] border border-zinc-100 flex flex-col items-center text-center gap-10 animate-calm-in">
                     <div className="space-y-4">
                         {!isAuthenticated && (
@@ -193,28 +190,31 @@ export default function RoomPage() {
     }
 
     return (
-        <div className="flex h-screen bg-white text-zinc-900 font-sans overflow-hidden selection:bg-blue-100 selection:text-blue-900">
+        <div className="flex h-screen bg-white text-zinc-900 font-sans overflow-hidden selection:bg-violet-100 selection:text-violet-900">
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col relative min-w-0">
                 {/* Header */}
-                <header className="px-6 h-20 flex items-center justify-between border-b border-zinc-100 bg-white/60 backdrop-blur-xl sticky top-0 z-20">
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-zinc-50 text-zinc-400 rounded-xl flex items-center justify-center border border-zinc-100">
-                            <LuVideo size={18} />
+                <header className="px-6 h-20 flex items-center justify-between border-b border-zinc-50 bg-white/60 backdrop-blur-xl sticky top-0 z-20 shrink-0">
+                    <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 bg-violet-600 text-white rounded-lg flex items-center justify-center shadow-lg shadow-violet-100">
+                                <LuVideo size={16} />
+                            </div>
+                            <h2 className="font-bold text-zinc-900 tracking-tight">{call.name}</h2>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <h2 className="font-bold text-zinc-900 tracking-tight truncate max-w-[140px] sm:max-w-none">{call.name}</h2>
-                            {!isAuthenticated ? (
-                                <Link href="/pricing" className="flex items-center gap-1.5 px-2 py-0.5 bg-violet-50 text-[10px] font-bold text-violet-600 rounded-md border border-violet-100 uppercase tracking-widest hover:bg-violet-100 transition-colors">
-                                    Guest Cap: 4
-                                </Link>
-                            ) : (
-                                <Link href="/pricing" className="flex items-center gap-1.5 px-2 py-0.5 bg-green-50 text-[10px] font-bold text-green-600 rounded-md border border-green-100 uppercase tracking-widest hover:bg-green-100 transition-colors">
-                                    <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse" />
-                                    Zenith Pro
-                                </Link>
-                            )}
-                        </div>
+                        
+                        <div className="h-4 w-[1px] bg-zinc-100 hidden sm:block" />
+
+                        {!isAuthenticated ? (
+                            <Link href="/pricing" className="text-[10px] font-bold text-violet-600 uppercase tracking-widest bg-violet-50 px-2 py-0.5 rounded border border-violet-100/50 hover:bg-violet-100 transition-colors">
+                                Guest Cap: 4
+                            </Link>
+                        ) : (
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-50 text-[10px] font-bold text-green-600 rounded border border-green-100/50 uppercase tracking-widest cursor-default">
+                                <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse" />
+                                Pro
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -248,7 +248,6 @@ export default function RoomPage() {
                 {/* Video Grid */}
                 <main className="flex-1 p-6 overflow-y-auto bg-zinc-50/20 flex flex-col items-center scrollbar-hide">
                     <div className="flex flex-wrap gap-6 justify-center items-center w-full max-w-7xl mx-auto min-h-full py-12">
-                        {/* Display stream (Local share) if active, else Local Camera */}
                         {screenStream ? (
                             <VideoPlayer stream={screenStream} muted isLocal label={`${userName}'s Screen`} />
                         ) : (
@@ -280,17 +279,12 @@ export default function RoomPage() {
                 </main>
 
                 {/* Footer Controls */}
-                <footer className="px-4 py-4 sm:px-6 bg-white/80 backdrop-blur-md border-t border-zinc-100 z-20">
+                <footer className="px-4 py-4 sm:px-6 bg-white/80 backdrop-blur-md border-t border-zinc-100 z-20 shrink-0">
                     <Controls localStream={localStream} onScreenShare={handleScreenShare} onHangUp={handleEndMeeting} />
                 </footer>
             </div>
 
-            {/* Sidebar - Desktop (Fixed) & Mobile (Slide-in) */}
-            <div
-                className={`fixed inset-0 z-50 bg-black/20 backdrop-blur-sm xl:hidden transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                onClick={() => setIsSidebarOpen(false)}
-            />
-
+            {/* Sidebar */}
             <aside className={`
                 w-full max-w-[380px] fixed top-0 right-0 h-full z-50 bg-white shadow-2xl sidebar-transition xl:relative xl:translate-x-0 xl:shadow-none xl:z-auto border-l border-zinc-100 flex flex-col
                 ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}
@@ -311,7 +305,6 @@ export default function RoomPage() {
                         </button>
                     </div>
 
-                    {/* Mobile Close Button */}
                     <button
                         onClick={() => setIsSidebarOpen(false)}
                         className="xl:hidden ml-4 p-2 bg-zinc-50 text-zinc-400 hover:text-zinc-900 rounded-xl transition-all"
@@ -328,6 +321,12 @@ export default function RoomPage() {
                     )}
                 </div>
             </aside>
-        </div >
+
+            {/* Sidebar mobile overlay */}
+            <div
+                className={`fixed inset-0 z-40 bg-zinc-900/10 backdrop-blur-sm xl:hidden transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                onClick={() => setIsSidebarOpen(false)}
+            />
+        </div>
     );
 }

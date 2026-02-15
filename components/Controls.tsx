@@ -11,7 +11,8 @@ import {
     LuCopy,
     LuShare2,
     LuMessageCircle,
-    LuSlack
+    LuSlack,
+    LuUserPlus
 } from "react-icons/lu";
 
 interface ControlsProps {
@@ -78,8 +79,10 @@ export function Controls({ localStream, onScreenShare, onHangUp }: ControlsProps
         window.open(`https://slack.com/share?text=${text}&url=${encodeURIComponent(window.location.href)}`, '_blank');
     };
 
+    const [showShareMenu, setShowShareMenu] = useState(false);
+
     return (
-        <div className="flex items-center justify-center gap-2 sm:gap-4 max-w-2xl mx-auto">
+        <div className="flex items-center justify-center gap-2 sm:gap-4 max-w-2xl mx-auto relative">
             <button
                 onClick={toggleMic}
                 className={`p-3.5 sm:p-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 ${micOn
@@ -89,7 +92,7 @@ export function Controls({ localStream, onScreenShare, onHangUp }: ControlsProps
                 title={micOn ? "Mute Mic" : "Unmute Mic"}
             >
                 {micOn ? <LuMic size={20} /> : <LuMicOff size={20} />}
-                <span className="hidden md:inline text-sm">{micOn ? "Mute" : "Unmute"}</span>
+                <span className="hidden lg:inline text-sm">{micOn ? "Mute" : "Unmute"}</span>
             </button>
 
             <button
@@ -101,7 +104,7 @@ export function Controls({ localStream, onScreenShare, onHangUp }: ControlsProps
                 title={camOn ? "Stop Cam" : "Start Cam"}
             >
                 {camOn ? <LuCamera size={20} /> : <LuCameraOff size={20} />}
-                <span className="hidden md:inline text-sm">{camOn ? "Stop Video" : "Start Video"}</span>
+                <span className="hidden lg:inline text-sm">{camOn ? "Stop Video" : "Start Video"}</span>
             </button>
 
             <button
@@ -118,28 +121,50 @@ export function Controls({ localStream, onScreenShare, onHangUp }: ControlsProps
 
             <div className="h-8 w-[1px] bg-zinc-200 mx-1 sm:mx-2 hidden sm:block" />
 
-            {/* Smart Invites */}
-            <button
-                onClick={shareToWhatsApp}
-                className="p-3.5 sm:p-4 bg-green-500 text-white rounded-2xl hover:bg-green-600 transition-all duration-300 shadow-lg shadow-green-100 flex items-center justify-center gap-2 font-bold active:scale-95 border border-green-400"
-                title="Share to WhatsApp"
-            >
-                <LuMessageCircle size={20} />
-                <span className="hidden xl:inline text-sm">WhatsApp</span>
-            </button>
+            {/* Smart Invites Dropdown */}
+            <div className="relative">
+                <button
+                    onClick={() => setShowShareMenu(!showShareMenu)}
+                    className={`p-3.5 sm:p-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-sm active:scale-95 ${showShareMenu
+                        ? "bg-violet-50 text-violet-600 border border-violet-100 shadow-md"
+                        : "bg-zinc-50 text-zinc-900 border border-zinc-200 hover:bg-zinc-100 hover:shadow-md"
+                        }`}
+                >
+                    <LuUserPlus size={20} />
+                    <span className="hidden lg:inline text-sm">Invite</span>
+                </button>
 
-            <button
-                onClick={shareToSlack}
-                className="p-3.5 sm:p-4 bg-zinc-900 text-white rounded-2xl hover:bg-zinc-800 transition-all duration-300 shadow-lg shadow-zinc-200 flex items-center justify-center gap-2 font-bold active:scale-95 border border-zinc-700"
-                title="Share to Slack"
-            >
-                <LuSlack size={20} />
-                <span className="hidden xl:inline text-sm">Slack</span>
-            </button>
+                {showShareMenu && (
+                    <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-48 bg-white rounded-2xl shadow-2xl border border-zinc-100 p-2 animate-calm-in z-50">
+                        <button
+                            onClick={() => { shareToWhatsApp(); setShowShareMenu(false); }}
+                            className="w-full flex items-center gap-3 p-3 text-left text-sm font-bold text-zinc-600 hover:bg-green-50 hover:text-green-600 rounded-xl transition-colors"
+                        >
+                            <LuMessageCircle size={18} />
+                            WhatsApp
+                        </button>
+                        <button
+                            onClick={() => { shareToSlack(); setShowShareMenu(false); }}
+                            className="w-full flex items-center gap-3 p-3 text-left text-sm font-bold text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 rounded-xl transition-colors"
+                        >
+                            <LuSlack size={18} />
+                            Slack
+                        </button>
+                        <div className="h-[1px] bg-zinc-100 my-1" />
+                        <button
+                            onClick={() => { handleCopyLink(); setShowShareMenu(false); }}
+                            className="w-full flex items-center gap-3 p-3 text-left text-sm font-bold text-zinc-600 hover:bg-violet-50 hover:text-violet-600 rounded-xl transition-colors"
+                        >
+                            <LuCopy size={18} />
+                            Copy Link
+                        </button>
+                    </div>
+                )}
+            </div>
 
             <button
                 onClick={() => onHangUp ? onHangUp() : window.location.href = "/"}
-                className="p-3.5 sm:p-4 bg-red-600 text-white rounded-2xl hover:bg-red-700 transition-all duration-300 shadow-lg shadow-red-200 flex items-center justify-center gap-2 font-bold active:scale-95 border border-red-500"
+                className="p-3.5 sm:p-4 bg-red-600 text-white rounded-2xl hover:bg-red-700 transition-all duration-300 shadow-lg shadow-red-200 flex items-center justify-center gap-2 font-bold active:scale-95 border border-red-500 ml-auto"
                 title="Hang Up"
             >
                 <LuPhoneOff size={20} />

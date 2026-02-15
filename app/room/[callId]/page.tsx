@@ -21,7 +21,8 @@ import {
     LuX,
     LuUserPlus,
     LuLayoutGrid,
-    LuTriangleAlert
+    LuTriangleAlert,
+    LuCopy
 } from "react-icons/lu";
 
 export default function RoomPage() {
@@ -56,6 +57,25 @@ export default function RoomPage() {
             setJoined(true);
         } catch (err: any) {
             setError(err.message || "Failed to join. Upgrade to Zenith Pro for larger meetings.");
+        }
+    };
+
+    const handleEndMeeting = async () => {
+        if (!call) return;
+        const duration = Math.round((Date.now() - startTime) / 60000);
+        try {
+            const id = await createRecap({
+                callId,
+                meetingName: call.name,
+                participantCount: participants.length,
+                durationMinutes: duration,
+                messagesCount: messages.length,
+                filesCount: files.length,
+            });
+            setRecapId(id);
+        } catch (err) {
+            console.error("Recap error:", err);
+            window.location.href = "/";
         }
     };
 

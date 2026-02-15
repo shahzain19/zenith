@@ -20,7 +20,7 @@ interface ControlsProps {
     onHangUp?: () => void;
 }
 
-export function Controls({ localStream, onScreenShare }: ControlsProps) {
+export function Controls({ localStream, onScreenShare, onHangUp }: ControlsProps) {
     const [micOn, setMicOn] = useState(true);
     const [camOn, setCamOn] = useState(true);
     const [screenStream, setScreenStream] = useState<MediaStream | null>(null);

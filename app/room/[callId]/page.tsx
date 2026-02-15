@@ -34,10 +34,16 @@ export default function RoomPage() {
     const [activeTab, setActiveTab] = useState<"chat" | "files">("chat");
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [recapId, setRecapId] = useState<Id<"recaps"> | null>(null);
+    const [startTime] = useState(() => Date.now());
 
     const isAuthenticated = !!clerkUserId;
     const call = useQuery(api.calls.getCall, { callId });
     const joinCall = useMutation(api.calls.joinCall);
+    const createRecap = useMutation(api.calls.createRecap);
+    const messages = useQuery(api.calls.getMessages, { callId }) || [];
+    const files = useQuery(api.calls.getFiles, { callId }) || [];
+    const participants = useQuery(api.participants.getParticipants, { callId }) || [];
 
     const { localStream, screenStream, setScreenStream, remoteStreams, replaceTrack } = useWebRTC(callId, userId, userName);
 
@@ -120,6 +126,47 @@ export default function RoomPage() {
                             <LuArrowRight size={20} className="opacity-40" />
                         </button>
                     </form>
+                </div>
+            </div>
+        );
+    }
+
+    if (recapId) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-white p-6">
+                <div className="w-full max-w-md p-10 bg-white rounded-[2.5rem] border border-zinc-100 text-center space-y-10 animate-calm-in">
+                    <div className="space-y-4">
+                        <div className="w-20 h-20 bg-violet-600 text-white rounded-3xl flex items-center justify-center mx-auto shadow-xl shadow-violet-200">
+                            <LuSparkles size={32} />
+                        </div>
+                        <h2 className="text-3xl font-bold tracking-tight">Meeting Recap Ready</h2>
+                        <p className="text-zinc-500 font-medium text-sm leading-relaxed">
+                            Share this professional recap with your teammates or on social media.
+                        </p>
+                    </div>
+
+                    <div className="space-y-4">
+                        <button
+                            onClick={() => {
+                                const url = `${window.location.origin}/recap/${recapId}`;
+                                navigator.clipboard.writeText(url);
+                            }}
+                            className="w-full h-16 bg-zinc-900 text-white font-bold rounded-2xl flex items-center justify-center gap-3 hover:bg-zinc-800 transition-all active:scale-95"
+                        >
+                            <LuCopy size={20} />
+                            Copy Recap Link
+                        </button>
+                        <a
+                            href={`/recap/${recapId}`}
+                            className="block w-full h-16 bg-violet-50 text-violet-600 font-bold rounded-2xl flex items-center justify-center gap-3 hover:bg-violet-100 transition-all"
+                        >
+                            View Recap
+                        </a>
+                    </div>
+
+                    <Link href="/" className="inline-block text-xs font-bold text-zinc-400 uppercase tracking-widest hover:text-zinc-600 transition-colors">
+                        Back to Home
+                    </Link>
                 </div>
             </div>
         );
@@ -214,7 +261,7 @@ export default function RoomPage() {
 
                 {/* Footer Controls */}
                 <footer className="px-4 py-4 sm:px-6 bg-white/80 backdrop-blur-md border-t border-zinc-100 z-20">
-                    <Controls localStream={localStream} onScreenShare={handleScreenShare} />
+                    <Controls localStream={localStream} onScreenShare={handleScreenShare} onHangUp={handleEndMeeting} />
                 </footer>
             </div>
 

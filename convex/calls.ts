@@ -63,6 +63,30 @@ export const joinCall = mutation({
     },
 });
 
+export const createRecap = mutation({
+    args: {
+        callId: v.id("calls"),
+        meetingName: v.string(),
+        participantCount: v.number(),
+        durationMinutes: v.number(),
+        messagesCount: v.number(),
+        filesCount: v.number(),
+    },
+    handler: async (ctx, args) => {
+        return await ctx.db.insert("recaps", {
+            ...args,
+            createdAt: Date.now(),
+        });
+    },
+});
+
+export const getRecap = query({
+    args: { recapId: v.id("recaps") },
+    handler: async (ctx, args) => {
+        return await ctx.db.get(args.recapId);
+    },
+});
+
 export const getParticipants = query({
     args: { callId: v.id("calls") },
     handler: async (ctx, args) => {

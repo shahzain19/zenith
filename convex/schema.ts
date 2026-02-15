@@ -34,4 +34,13 @@ export default defineSchema({
   })
     .index("by_call_receiver", ["callId", "receiverId"])
     .index("by_call_sender", ["callId", "senderId"]),
+  recaps: defineTable({
+    callId: v.id("calls"),
+    meetingName: v.string(),
+    participantCount: v.number(),
+    durationMinutes: v.number(),
+    messagesCount: v.number(),
+    filesCount: v.number(),
+    createdAt: v.number(),
+  }),
 });

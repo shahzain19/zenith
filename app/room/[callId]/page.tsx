@@ -43,7 +43,7 @@ export default function RoomPage() {
     const createRecap = useMutation(api.calls.createRecap);
     const messages = useQuery(api.messages.getMessages, { callId }) || [];
     const files = useQuery(api.files.getFiles, { callId }) || [];
-    const participants = useQuery(api.participants.getParticipants, { callId }) || [];
+    const participants = useQuery(api.calls.getParticipants, { callId }) || [];
 
     const { localStream, screenStream, setScreenStream, remoteStreams, replaceTrack } = useWebRTC(callId, userId, userName);
 

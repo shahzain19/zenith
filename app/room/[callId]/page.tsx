@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -27,6 +27,7 @@ import {
 export default function RoomPage() {
     const params = useParams();
     const callId = params.callId as Id<"calls">;
+    const router = useRouter();
     const { userId: clerkUserId, isLoaded } = useAuth();
     const [userName, setUserName] = useState<string>("");
     const [userId] = useState(() => Math.random().toString(36).substring(7));
@@ -35,6 +36,7 @@ export default function RoomPage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [recapId, setRecapId] = useState<Id<"recaps"> | null>(null);
+    const [isEnding, setIsEnding] = useState(false);
     const [startTime] = useState(() => Date.now());
 
     const isAuthenticated = !!clerkUserId;
@@ -61,7 +63,13 @@ export default function RoomPage() {
 
     const handleEndMeeting = async () => {
         if (!call) return;
+        setIsEnding(true);
         const duration = Math.round((Date.now() - startTime) / 60000);
+
+        // Stop local streams immediately for a cleaner "ending" experience
+        localStream?.getTracks().forEach(track => track.stop());
+        screenStream?.getTracks().forEach(track => track.stop());
+
         try {
             const id = await createRecap({
                 callId,
@@ -71,10 +79,13 @@ export default function RoomPage() {
                 messagesCount: messages.length,
                 filesCount: files.length,
             });
-            setRecapId(id);
+            // Direct redirection to the public recap page
+            router.push(`/recap/${id}`);
         } catch (err) {
             console.error("Recap error:", err);
             window.location.href = "/";
+        } finally {
+            setIsEnding(false);
         }
     };
 
@@ -87,13 +98,15 @@ export default function RoomPage() {
         }
     };
 
-    if (!isLoaded || !call) return (
+    if (!isLoaded || !call || isEnding) return (
         <div className="flex min-h-screen items-center justify-center bg-white">
             <div className="flex flex-col items-center gap-4">
                 <div className="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-violet-200 animate-pulse-subtle">
                     <LuVideo size={20} />
                 </div>
-                <p className="text-zinc-500 font-bold tracking-tight text-sm">Zenith is warming up...</p>
+                <p className="text-zinc-500 font-bold tracking-tight text-sm">
+                    {isEnding ? "Zenith is saving your recap..." : "Zenith is warming up..."}
+                </p>
             </div>
         </div>
     );
@@ -148,46 +161,8 @@ export default function RoomPage() {
         );
     }
 
-    if (recapId) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-white p-6">
-                <div className="w-full max-w-md p-10 bg-white rounded-[2.5rem] border border-zinc-100 text-center space-y-10 animate-calm-in">
-                    <div className="space-y-4">
-                        <div className="w-20 h-20 bg-violet-600 text-white rounded-3xl flex items-center justify-center mx-auto shadow-xl shadow-violet-200">
-                            <LuSparkles size={32} />
-                        </div>
-                        <h2 className="text-3xl font-bold tracking-tight">Meeting Recap Ready</h2>
-                        <p className="text-zinc-500 font-medium text-sm leading-relaxed">
-                            Share this professional recap with your teammates or on social media.
-                        </p>
-                    </div>
-
-                    <div className="space-y-4">
-                        <button
-                            onClick={() => {
-                                const url = `${window.location.origin}/recap/${recapId}`;
-                                navigator.clipboard.writeText(url);
-                            }}
-                            className="w-full h-16 bg-zinc-900 text-white font-bold rounded-2xl flex items-center justify-center gap-3 hover:bg-zinc-800 transition-all active:scale-95"
-                        >
-                            <LuCopy size={20} />
-                            Copy Recap Link
-                        </button>
-                        <a
-                            href={`/recap/${recapId}`}
-                            className="block w-full h-16 bg-violet-50 text-violet-600 font-bold rounded-2xl flex items-center justify-center gap-3 hover:bg-violet-100 transition-all"
-                        >
-                            View Recap
-                        </a>
-                    </div>
-
-                    <Link href="/" className="inline-block text-xs font-bold text-zinc-400 uppercase tracking-widest hover:text-zinc-600 transition-colors">
-                        Back to Home
-                    </Link>
-                </div>
-            </div>
-        );
-    }
+    // This intermediate state is no longer needed since we redirect directly,
+    // but we keep the logic for handleEndMeeting's redirection.
 
     return (
         <div className="flex h-screen bg-white text-zinc-900 font-sans overflow-hidden selection:bg-violet-100 selection:text-violet-900">
@@ -202,7 +177,7 @@ export default function RoomPage() {
                             </div>
                             <h2 className="font-bold text-zinc-900 tracking-tight">{call.name}</h2>
                         </div>
-                        
+
                         <div className="h-4 w-[1px] bg-zinc-100 hidden sm:block" />
 
                         {!isAuthenticated ? (

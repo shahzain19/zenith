@@ -12,7 +12,8 @@ import {
     LuFile,
     LuSparkles,
     LuArrowRight,
-    LuGlobe
+    LuGlobe,
+    LuCopy
 } from "react-icons/lu";
 import Link from "next/link";
 
@@ -99,14 +100,25 @@ export default function RecapPage() {
 
                 {/* CTA Section */}
                 <div className="text-center space-y-8 py-10 animate-calm-in" style={{ animationDelay: "200ms" }}>
-                    <h3 className="text-2xl font-bold tracking-tight">Experience Zenith yourself.</h3>
-                    <p className="text-zinc-500 font-medium">Elevated calls. Absolute focus. Built for teams who move fast.</p>
-                    <Link href="/">
-                        <button className="h-16 px-10 bg-violet-600 text-white font-bold text-lg rounded-2xl hover:bg-violet-700 transition-all active:scale-95 shadow-xl shadow-violet-200 flex items-center justify-center gap-3 mx-auto">
-                            Start Hosting Free
-                            <LuArrowRight size={20} />
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(window.location.href);
+                                alert("Link copied to clipboard!");
+                            }}
+                            className="h-16 px-8 bg-zinc-900 text-white font-bold rounded-2xl flex items-center justify-center gap-3 hover:bg-zinc-800 transition-all active:scale-95 w-full sm:w-auto"
+                        >
+                            <LuCopy size={20} />
+                            Copy Recap Link
                         </button>
-                    </Link>
+                        <Link href="/" className="w-full sm:w-auto">
+                            <button className="h-16 px-10 bg-violet-600 text-white font-bold text-lg rounded-2xl hover:bg-violet-700 transition-all active:scale-95 shadow-xl shadow-violet-200 flex items-center justify-center gap-3 w-full">
+                                Start Hosting Free
+                                <LuArrowRight size={20} />
+                            </button>
+                        </Link>
+                    </div>
+                    <p className="text-zinc-400 font-medium text-xs">Elevated calls. Absolute focus. Built for teams who move fast.</p>
                 </div>
             </main>
 

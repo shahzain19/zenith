@@ -54,6 +54,22 @@ export default function RecapPage() {
                     </h1>
                 </div>
 
+                {recap.aiSummary && (
+                    <div className="p-10 bg-violet-600 text-white rounded-[2.5rem] shadow-2xl shadow-violet-200 animate-calm-in space-y-6" style={{ animationDelay: "50ms" }}>
+                        <div className="flex items-center gap-3 opacity-80">
+                            <LuSparkles size={20} />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Genius AI Summary</span>
+                        </div>
+                        <div className="prose prose-invert max-w-none text-violet-50 font-medium leading-relaxed">
+                            {recap.aiSummary.split('\n').map((line: string, i: number) => (
+                                <p key={i} className={line.trim().startsWith('*') || line.trim().startsWith('-') ? "ml-4" : ""}>
+                                    {line.replace(/^[* -]\s*/, '')}
+                                </p>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* Recap Card */}
                 <div className="p-10 bg-white rounded-[2.5rem] border border-zinc-100 shadow-2xl shadow-violet-100/50 space-y-12 animate-calm-in" style={{ animationDelay: "100ms" }}>
                     <div className="grid grid-cols-2 gap-8">

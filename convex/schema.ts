@@ -41,6 +41,7 @@ export default defineSchema({
     durationMinutes: v.number(),
     messagesCount: v.number(),
     filesCount: v.number(),
+    aiSummary: v.optional(v.string()),
     createdAt: v.number(),
   }),
 });

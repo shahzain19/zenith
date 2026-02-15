@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useEffect, useState, useMemo } from "react";
@@ -35,7 +35,6 @@ export default function RoomPage() {
     const [activeTab, setActiveTab] = useState<"chat" | "files">("chat");
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [recapId, setRecapId] = useState<Id<"recaps"> | null>(null);
     const [isEnding, setIsEnding] = useState(false);
     const [startTime] = useState(() => Date.now());
 
@@ -43,6 +42,7 @@ export default function RoomPage() {
     const call = useQuery(api.calls.getCall, { callId });
     const joinCall = useMutation(api.calls.joinCall);
     const createRecap = useMutation(api.calls.createRecap);
+    const generateSummary = useAction((api as any).ai.generateSummary);
     const messages = useQuery(api.messages.getMessages, { callId }) || [];
     const files = useQuery(api.files.getFiles, { callId }) || [];
     const participants = useQuery(api.calls.getParticipants, { callId }) || [];
@@ -63,6 +63,7 @@ export default function RoomPage() {
 
     const handleEndMeeting = async () => {
         if (!call) return;
+        console.log("Ending meeting...");
         setIsEnding(true);
         const duration = Math.round((Date.now() - startTime) / 60000);
 
@@ -71,6 +72,28 @@ export default function RoomPage() {
         screenStream?.getTracks().forEach(track => track.stop());
 
         try {
+            // 1. Generate AI Summary (with a timeout so we don't hang)
+            let aiSummary = undefined;
+            if (messages.length > 0) {
+                console.log("Generating AI summary with Gemini...");
+                try {
+                    // 10 second timeout for AI
+                    const summaryPromise = generateSummary({ callId });
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error("AI Timeout")), 10000)
+                    );
+                    aiSummary = await Promise.race([summaryPromise, timeoutPromise]) as string;
+                    console.log("AI Summary generated successfully.");
+                } catch (summaryErr) {
+                    console.error("AI Summary generation failed or timed out:", summaryErr);
+                    // Continue anyway
+                }
+            } else {
+                console.log("No messages to summarize.");
+            }
+
+            // 2. Create the recap with the summary
+            console.log("Saving meeting recap to database...");
             const id = await createRecap({
                 callId,
                 meetingName: call.name,
@@ -78,14 +101,18 @@ export default function RoomPage() {
                 durationMinutes: duration,
                 messagesCount: messages.length,
                 filesCount: files.length,
+                aiSummary,
             });
-            // Direct redirection to the public recap page
-            router.push(`/recap/${id}`);
+
+            console.log("Recap saved perfectly. ID:", id);
+
+            // 3. Absolute Redirection
+            const targetUrl = `/recap/${id}`;
+            console.log("Redirecting to:", targetUrl);
+            window.location.href = targetUrl;
         } catch (err) {
-            console.error("Recap error:", err);
+            console.error("Critical error during meeting end:", err);
             window.location.href = "/";
-        } finally {
-            setIsEnding(false);
         }
     };
 
@@ -105,7 +132,7 @@ export default function RoomPage() {
                     <LuVideo size={20} />
                 </div>
                 <p className="text-zinc-500 font-bold tracking-tight text-sm">
-                    {isEnding ? "Zenith is saving your recap..." : "Zenith is warming up..."}
+                    {isEnding ? "Zenith AI is summarizing your meeting..." : "Zenith is warming up..."}
                 </p>
             </div>
         </div>
